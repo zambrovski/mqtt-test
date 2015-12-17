@@ -1,18 +1,16 @@
 package de.techjava.mqtt.test;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertFalse;
 
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map.Entry;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.techjava.mqtt.test.MqttClientLauncher.TopicMessage;
-import io.moquette.proto.messages.AbstractMessage;
-import io.moquette.proto.messages.PublishMessage;
+import de.techjava.mqtt.Utils;
 
 public class MqttTestRule extends ExternalResource {
 
@@ -35,20 +33,15 @@ public class MqttTestRule extends ExternalResource {
 	}
 
 	public void publishMessage(String topic, boolean retain, byte[] payload) {
-		MqttMessage message = new MqttMessage();
-		message.setRetained(retain);
-		message.setPayload(payload);
-		client.publish(topic, message);
+		client.publish(topic, Utils.message(payload, retain));
 	}
 
 	public void publishMessage(String topic, boolean retain, String payload) {
 		publishMessage(topic, retain, payload.getBytes());
 	}
 
-	public MessageAssert assertMessageReceived() {
-		assertFalse("No message received", client.getMessages().isEmpty());
-		TopicMessage topicMessage = client.getMessages().pop();
-		return new MessageAssert(topicMessage.topic, topicMessage.message);
+	public List<Entry<String, MqttMessage>> getMessagesReceived() {
+		return client.getMessages();
 	}
 
 }

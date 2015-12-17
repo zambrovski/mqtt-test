@@ -1,5 +1,6 @@
 package de.techjava.mqtt.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
@@ -7,6 +8,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.moquette.BrokerConstants;
 import io.moquette.interception.InterceptHandler;
 import io.moquette.proto.messages.PublishMessage;
 import io.moquette.server.Server;
@@ -16,7 +18,13 @@ import io.moquette.server.config.MemoryConfig;
 public class MqttBrokerLauncher {
 
 	static final Logger logger = LoggerFactory.getLogger(MqttBrokerLauncher.class);
-	private final IConfig classPathConfig = new MemoryConfig(new Properties());
+
+	private final IConfig classPathConfig = new MemoryConfig(new Properties()) {
+		{
+			setProperty(BrokerConstants.PERSISTENT_STORE_PROPERTY_NAME, getClass().getResource("/").getFile()
+					+ File.separator + BrokerConstants.DEFAULT_MOQUETTE_STORE_MAP_DB_FILENAME);
+		}
+	};
 	private final Server mqttBroker = new Server();
 
 	public MqttBrokerLauncher() {

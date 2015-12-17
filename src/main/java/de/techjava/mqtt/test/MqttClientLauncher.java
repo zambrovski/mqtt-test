@@ -1,5 +1,7 @@
 package de.techjava.mqtt.test;
 
+import java.util.AbstractMap;
+import java.util.Map.Entry;
 import java.util.Stack;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -13,6 +15,9 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.techjava.mqtt.Utils;
+import de.techjava.mqtt.assertion.MqttAssertions;
+
 public class MqttClientLauncher {
 
 	private Logger logger = LoggerFactory.getLogger(MqttClient.class);
@@ -22,19 +27,9 @@ public class MqttClientLauncher {
 
 	private MemoryPersistence persistence = new MemoryPersistence();
 	private MqttClient mqttClient;
-	private Stack<TopicMessage> messages = new Stack<TopicMessage>();
+	private Stack<Entry<String, MqttMessage>> messages = new Stack<Entry<String, MqttMessage>>();
 
-	class TopicMessage {
-		String topic;
-		MqttMessage message;
-
-		public TopicMessage(String topic, MqttMessage message) {
-			this.topic = topic;
-			this.message = message;
-		}
-	}
-
-	public Stack<TopicMessage> getMessages() {
+	public Stack<Entry<String, MqttMessage>> getMessages() {
 		return messages;
 	}
 
@@ -55,8 +50,8 @@ public class MqttClientLauncher {
 
 		mqttClient.setCallback(new MqttCallback() {
 
-			public void messageArrived(String topic, MqttMessage msg) throws Exception {
-				messages.push(new TopicMessage(topic, msg));
+			public void messageArrived(String topic, MqttMessage message) throws Exception {
+				messages.push(Utils.entry(topic, message));
 			}
 
 			public void deliveryComplete(IMqttDeliveryToken token) {
@@ -93,5 +88,6 @@ public class MqttClientLauncher {
 			logger.error("MQTT Error", e);
 		}
 	}
+
 
 }
