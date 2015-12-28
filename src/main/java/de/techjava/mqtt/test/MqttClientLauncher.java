@@ -1,8 +1,8 @@
 package de.techjava.mqtt.test;
 
-import java.util.AbstractMap;
 import java.util.Map.Entry;
 import java.util.Stack;
+import java.util.UUID;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -16,78 +16,78 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.techjava.mqtt.Utils;
-import de.techjava.mqtt.assertion.MqttAssertions;
 
 public class MqttClientLauncher {
 
 	private Logger logger = LoggerFactory.getLogger(MqttClient.class);
 
-	String broker = "tcp://localhost:1883";
-	String clientId = "JavaSample";
+	String brokerUrl = "tcp://localhost:1883";
 
-	private MemoryPersistence persistence = new MemoryPersistence();
-	private MqttClient mqttClient;
+	private MqttClient client;
 	private Stack<Entry<String, MqttMessage>> messages = new Stack<Entry<String, MqttMessage>>();
 
 	public Stack<Entry<String, MqttMessage>> getMessages() {
 		return messages;
 	}
 
-	public void initClient() {
+	public void init() {
 		try {
-			mqttClient = new MqttClient(broker, clientId, persistence);
-			MqttConnectOptions connOpts = new MqttConnectOptions();
-			connOpts.setCleanSession(true);
-			logger.info("Connecting to MQTT broker: " + broker);
-			mqttClient.connect(connOpts);
-			System.out.println("Connected");
+			client = new MqttClient(brokerUrl, UUID.randomUUID().toString(), new MemoryPersistence());
+
+			final MqttConnectOptions senderOptions = new MqttConnectOptions();
+			senderOptions.setCleanSession(true);
+			logger.info("Connecting to MQTT broker: {}...", brokerUrl);
+			client.connect(senderOptions);
+			logger.info("Connected.");
 		} catch (MqttException e) {
 			logger.error("Error starting MQTT client.", e);
 		}
 	}
 
 	public void subscribe() {
-
-		mqttClient.setCallback(new MqttCallback() {
-
+		client.setCallback(new MqttCallback() {
 			public void messageArrived(String topic, MqttMessage message) throws Exception {
+				logger.info("Message received on {} in thread {}", topic, Thread.currentThread());
 				messages.push(Utils.entry(topic, message));
 			}
 
 			public void deliveryComplete(IMqttDeliveryToken token) {
-
+				logger.info("Delivery of a message complete.");
 			}
 
 			public void connectionLost(Throwable e) {
 				logger.error("Connection lost", e);
 			}
 		});
+		
 		try {
-			mqttClient.subscribe("*");
-		} catch (MqttException e1) {
-			logger.error("Error subscribing to topic", e1);
+			client.subscribe("foo");
+		} catch (MqttException e) {
+			logger.error("Error subscribing to topic", e);
 		}
 
 	}
 
-	public void shotwdownClient() {
+	public void shutwdown() {
 		try {
-			mqttClient.disconnect();
+			client.disconnect();
 			logger.info("Disconnected");
+
+			client.close();
 		} catch (MqttException e) {
 			logger.error("Error disconnecting from MQTT broker", e);
 		}
 	}
 
 	public void publish(String topic, MqttMessage message) {
+	
 		try {
-			mqttClient.publish(topic, message);
+			client.publish(topic, message);
 		} catch (MqttPersistenceException e) {
 			logger.error("Could not store message", e);
 		} catch (MqttException e) {
 			logger.error("MQTT Error", e);
 		}
 	}
-
 
 }

@@ -1,7 +1,6 @@
 package de.techjava.mqtt.test;
 
-import static java.util.Arrays.asList;
-
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -11,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.techjava.mqtt.Utils;
+import io.moquette.proto.messages.PublishMessage;
+import io.moquette.proto.messages.AbstractMessage.QOSType;
 
 public class MqttTestRule extends ExternalResource {
 
@@ -20,23 +21,29 @@ public class MqttTestRule extends ExternalResource {
 
 	@Override
 	protected void before() throws Throwable {
-		broker.initBroker(asList(new PublisherInterceptor()));
-		client.initClient();
-		super.before();
+		broker.init();
+		client.init();
+		client.subscribe();
+		Thread.sleep(1000);
 	}
 
 	@Override
 	protected void after() {
-		super.after();
-		client.shotwdownClient();
-		broker.shutdownServer();
+		client.shutwdown();
+		broker.shutdown();
 	}
 
-	public void publishMessage(String topic, boolean retain, byte[] payload) {
-		client.publish(topic, Utils.message(payload, retain));
+	public void publishMessage(final String topic, final boolean retain, final byte[] payload) {
+		// client.publish(topic, Utils.message(payload, retain));
+		final PublishMessage message = new PublishMessage();
+		message.setRetainFlag(retain);
+		message.setTopicName(topic);
+		message.setQos(QOSType.MOST_ONE);
+		message.setPayload(ByteBuffer.allocate(payload.length).put(payload));
+		broker.internalpublish(message);
 	}
 
-	public void publishMessage(String topic, boolean retain, String payload) {
+	public void publishMessage(final String topic, final boolean retain, final String payload) {
 		publishMessage(topic, retain, payload.getBytes());
 	}
 

@@ -11,6 +11,7 @@ public class Utils {
 		final MqttMessage message = new MqttMessage();
 		message.setRetained(retain);
 		message.setPayload(payload);
+		message.setQos(2);
 		return message;
 	}
 
